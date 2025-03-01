@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>List of channels</title>
+</head>
+<body>
+
+<h1>Chat client: List of message channels</h1>
+
+<ul>
+    {% for channel in channels %}
+        <li><a href="{{ url_for('show_channel') }}?channel={{ channel.endpoint | urlencode }}">{{ channel.name }}</a> (Type: {{ channel.type_of_service}})</li>
+    {% endfor %}
+</ul>
+
+</body>
+</html>

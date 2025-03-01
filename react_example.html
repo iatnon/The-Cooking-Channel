@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>React: Sharing states between components</title>
+    <!-- Link to Pico CSS from a CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+    <style>
+            /* Ensure full viewport height */
+            html, body {
+              height: 100%;
+              margin: 0;
+            }
+            /* Set up a flex container for the body */
+            body {
+              display: flex;
+              flex-direction: column;
+            }
+            /* Make main fill remaining space */
+            main {
+              flex: 1;
+            }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <script type="text/babel">
+
+        function NameDialog({name, setName}) {
+            return <dialog open>
+                      <article>
+                        <header>
+                          <p>
+                            <strong>What's your name?</strong>
+                          </p>
+                        </header>
+                        <p>
+                          <input type="text"
+                                     onKeyDown={({key, target}) => key === 'Enter' && setName(target.value)}/>
+                        </p>
+                      </article>
+                    </dialog>
+        }
+
+        function Container() {
+            const [name, setName] = React.useState("");
+
+            if (name) {
+                return <div><h1>Hello, {name}!</h1>
+                    <button onClick={() => setName("")}>cancel</button>
+                </div>;
+            } else {
+                return (
+                    <NameDialog name={name} setName={setName}/>
+                );
+            }
+        }
+
+        // main code: render the ChannelList component, add more components here
+        ReactDOM.render(
+            <div>
+                <header class="fixed-above-lg">
+                    <h1>React Component Example</h1>
+                </header>
+                <main class="container">
+                    <aside>The list of channels</aside>
+                    <hgroup>
+                        <h1>Chat client: List of channels</h1>
+                        <p>Here we go...</p>
+                    </hgroup>
+                    <div id="content">
+                        <section>
+                            <Container/>
+                        </section>
+                    </div>
+                </main>
+                <footer>AI and the Web 2025</footer>
+            </div>,
+            document.getElementById('root'));
+    </script>
+</body>
+</html>
