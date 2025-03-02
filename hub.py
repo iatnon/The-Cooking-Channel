@@ -35,7 +35,7 @@ app.app_context().push()  # create an app context before initializing db
 db.init_app(app)  # initialize database
 db.create_all()  # create database if necessary
 
-SERVER_AUTHKEY = '1234567890'
+SERVER_AUTHKEY = '....'
 STANDARD_CLIENT_URL = 'http://localhost:5005' # standard configuration in client.py, chang to real URL if necessary
 
 def health_check(endpoint, authkey):

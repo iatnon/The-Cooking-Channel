@@ -5,10 +5,9 @@ import datetime
 
 app = Flask(__name__)
 
-HUB_AUTHKEY = '1234567890'
+HUB_AUTHKEY = '....'
 HUB_URL = 'http://localhost:5555'
-# HUB_URL = 'http://vm146.rz.uni-osnabrueck.de/hub'
-SERVER_AUTHKEY = 'Crr-K24d-2N'
+SERVER_AUTHKEY = '....'
 CHANNELS = None
 LAST_CHANNEL_UPDATE = None
 

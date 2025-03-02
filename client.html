@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Set the title -->
+    <title>Antoni's Channel Client</title>
+    <!-- Load styling package -->
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+    <style>
+        /* Ensure full viewport height and flexible layout */
+        html, body {
+            height: 100%;
+            margin: 0;
+        }   
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+        main {
+            flex: 1;
+            overflow: auto;
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .channel-list {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px;
+        }
+        .channel-view {
+            flex: 2;
+            min-width: 300px;
+            padding: 10px;
+        }
+
+        /* Make sure header is aligned */
+        header.container {
+            display: flex;
+            justify-content: center; 
+            align-items: center; 
+            flex-wrap: wrap; 
+            padding: 20px 10px; 
+        }
+
+        /* Add a margin to the right and left of the displayed username */
+        header p {
+            margin: 0 30px 0 30px; 
+        }
+
+        /* Vertically align the title as it was down to much */
+        header h1 {
+            margin: 1px 0 0 0; 
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <!-- Use packages -->
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <script type="text/babel">
+        function NameDialog({ setName }) {
+            const [inputValue, setInputValue] = React.useState('');
+
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter' && inputValue.trim()) {
+                    setName(inputValue.trim());
+                }
+            };
+            
+            // Show the screen in which the user can enter their name once, the name will be remembered
+            return (
+                <dialog open>
+                    <article>
+                        <header>
+                            <p><strong>Please enter your name</strong></p>
+                        </header>
+                        <input
+                            type="text"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder="Your name"
+                        />
+                    </article>
+                </dialog>
+            );
+        }
+
+        // Component to display and filter the channel list
+        function ChannelList({ channels, selectChannel }) {
+            const [searchTerm, setSearchTerm] = React.useState('');
+
+            const filteredChannels = channels.filter(channel =>
+                channel.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            return (
+                <div className="channel-list">
+                    <article>
+                        <h2>Channels <button onClick={() => window.location.reload()}>Refresh</button></h2>
+                        <input
+                            type="text"
+                            placeholder="Search channels..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <ul>
+                            {filteredChannels.map(channel => (
+                                <li key={channel.id}>
+                                    <button onClick={() => selectChannel(channel)}>
+                                        {channel.name} ({channel.type_of_service})
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </article>
+                </div>
+            );
+        }
+
+        // Function to parse Markdown-formatted message content
+        function parseMessage(content) {
+            const lines = content.split('\n');
+            const elements = [];
+
+            lines.forEach((line, lineIndex) => {
+                if (line.startsWith('###')) {
+                    elements.push(<h3 key={lineIndex}>{line.slice(3).trim()}</h3>);
+                } else if (line.startsWith('##')) {
+                    elements.push(<h2 key={lineIndex}>{line.slice(2).trim()}</h2>);
+                } else if (line.startsWith('#')) {
+                    elements.push(<h1 key={lineIndex}>{line.slice(1).trim()}</h1>);
+                } else if (line.trim().startsWith('- ') || line.trim().startsWith('* ')) {
+                    const items = [];
+                    let currentIndex = lineIndex;
+                    while (currentIndex < lines.length && (lines[currentIndex].trim().startsWith('- ') || lines[currentIndex].trim().startsWith('* '))) {
+                        items.push(<li key={currentIndex}>{parseInline(lines[currentIndex].trim().slice(2))}</li>);
+                        currentIndex++;
+                    }
+                    elements.push(<ul key={lineIndex}>{items}</ul>);
+                    lines[currentIndex - 1] = '';
+                } else if (line.trim()) {
+                    elements.push(<p key={lineIndex}>{parseInline(line)}</p>);
+                }
+            });
+
+            return elements.length > 0 ? elements : content;
+        }
+
+        // Parse inline Markdown
+        function parseInline(text) {
+            const parts = text.split(/(\*\*.*?\*\*)|(__.*?__)|(\*.*?\*)|(_.*?_)|(\[.*?\]\(.*?\))/);
+            return parts.map((part, index) => {
+                if (!part) return null;
+                if ((part.startsWith('**') && part.endsWith('**')) || (part.startsWith('__') && part.endsWith('__'))) {
+                    return <strong key={index}>{part.slice(2, -2)}</strong>;
+                } else if ((part.startsWith('*') && part.endsWith('*')) || (part.startsWith('_') && part.endsWith('_'))) {
+                    return <em key={index}>{part.slice(1, -1)}</em>;
+                } else if (part.startsWith('[') && part.includes('](') && part.endsWith(')')) {
+                    const match = part.match(/\[(.+?)\]\((.+?)\)/);
+                    if (match) {
+                        const [, text, url] = match;
+                        return <a key={index} href={url} target="_blank" rel="noopener noreferrer">{text}</a>;
+                    }
+                } else if (part.startsWith('[_word_]') && part.endsWith('[/_word_]')) {
+                    return <strong key={index}>{part.slice(8, -9)}</strong>;
+                } else if (part.startsWith('[*]') && part.endsWith('[*]')) {
+                    return <em key={index}>{part.slice(3, -3)}</em>;
+                }
+                return part;
+            });
+        }
+
+        // Component to display channel messages and post new ones
+        function ChannelView({ channel, messages, postMessage, goBack }) {
+            const [messageContent, setMessageContent] = React.useState('');
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (messageContent.trim()) {
+                    postMessage(messageContent);
+                    setMessageContent('');
+                }
+            };
+
+            return (
+                <div className="channel-view">
+                    <article>
+                        <button onClick={goBack}>Back to Channels</button>
+                        <h2>{channel.name}</h2>
+                        <div>
+                            {messages.map((msg, index) => (
+                                <div key={index} className="message">
+                                    <strong>{msg.sender} ({new Date(msg.timestamp).toLocaleString()}):</strong> 
+                                    {' '}{parseMessage(msg.content)}
+                                </div>
+                            ))}
+                        </div>
+                        <form onSubmit={handleSubmit}>
+                            <input
+                                type="text"
+                                value={messageContent}
+                                onChange={(e) => setMessageContent(e.target.value)}
+                                placeholder="Type your message here..."
+                            />
+                            <button type="submit">Send</button>
+                        </form>
+                    </article>
+                </div>
+            );
+        }
+
+        // Main App component
+        function App() {
+            const [channels, setChannels] = React.useState([]);
+            const [selectedChannel, setSelectedChannel] = React.useState(null);
+            const [messages, setMessages] = React.useState([]);
+            const [userName, setUserName] = React.useState(localStorage.getItem('userName') || '');
+            const [loading, setLoading] = React.useState(false);
+
+            const HUB_URL = 'http://vm146.rz.uni-osnabrueck.de/hub';
+            const HUB_AUTHKEY = '1234567890';
+
+            React.useEffect(() => {
+                if (!userName) return;
+                setLoading(true);
+                fetch(`${HUB_URL}/channels`, {
+                    headers: {
+                        'Authorization': `authkey ${HUB_AUTHKEY}`
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch channels');
+                    return response.json();
+                })
+                .then(data => {
+                    setChannels(data.channels || []);
+                    setLoading(false);
+                })
+                .catch(error => {
+                    console.error('Error fetching channels:', error);
+                    setLoading(false);
+                });
+            }, [userName]);
+
+            const selectChannel = (channel) => {
+                setSelectedChannel(channel);
+                setLoading(true);
+                fetch(channel.endpoint, {
+                    headers: {
+                        'Authorization': `authkey ${channel.authkey}`
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch messages');
+                    return response.json();
+                })
+                .then(data => {
+                    setMessages(data || []);
+                    setLoading(false);
+                })
+                .catch(error => {
+                    console.error('Error fetching messages:', error);
+                    setLoading(false);
+                });
+            };
+            // Send the message
+            const postMessage = (content) => {
+                if (!selectedChannel) return;
+                const timestamp = new Date().toISOString();
+                fetch(selectedChannel.endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `authkey ${selectedChannel.authkey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content,
+                        sender: userName,
+                        timestamp,
+                        extra: null
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to post message');
+                    selectChannel(selectedChannel);
+                })
+                .catch(error => console.error('Error posting message:', error));
+            };
+            
+            if (!userName) {
+                return <NameDialog setName={(name) => {
+                    setUserName(name);
+                    localStorage.setItem('userName', name);
+                }} />;
+            }
+
+            // Show the Channel Client
+            return (
+                <div>
+                    <header className="container">
+                        <h1>Antoni's Channel Client</h1>
+                        <p>Welcome, {userName}!</p>
+                        <button onClick={() => {
+                            setUserName('');
+                            localStorage.removeItem('userName');
+                        }}>Change Name</button>
+                    </header>
+                    <main className="container">
+                        {loading && <p>Loading...</p>}
+                        <ChannelList channels={channels} selectChannel={selectChannel} />
+                        {selectedChannel && (
+                            <ChannelView
+                                channel={selectedChannel}
+                                messages={messages}
+                                postMessage={postMessage}
+                                goBack={() => setSelectedChannel(null)}
+                            />
+                        )}
+                    </main>
+                     
+                    <footer className="container">
+                        <p>AI and the Web 2025</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>

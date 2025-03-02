@@ -18,10 +18,10 @@ app.config.from_object(__name__ + '.ConfigClass')  # configuration
 app.app_context().push()  # create an app context before initializing db
 
 HUB_URL = 'http://localhost:5555'
-HUB_AUTHKEY = '1234567890'
-SERVER_AUTHKEY = 'Crr-K24d-2N'
-CHANNEL_AUTHKEY = 'Crr-K24d-2N'
-CHANNEL_NAME = "The Cooking Channel"
+HUB_AUTHKEY = '...'
+SERVER_AUTHKEY = '...'
+CHANNEL_AUTHKEY = '...'
+CHANNEL_NAME = "...."
 CHANNEL_ENDPOINT = "http://localhost:5001" # don't forget to adjust in the bottom of the file
 CHANNEL_FILE = 'messages.json'
 CHANNEL_TYPE_OF_SERVICE = 'aiweb24:chat'
@@ -68,6 +68,7 @@ def parse_llm_response(llm_response: str):
     return parsed_data
 
 def chat(conversation_history):
+    # Send the prompt to a gemini 1.5 flash text api
     history = []
     for conversation in conversation_history:
         if 'user' in conversation:
@@ -92,8 +93,10 @@ def chat(conversation_history):
         response = requests.post(url, headers=headers, data=body)
         if response.status_code == 200:
             response_data = response.json()
-            original_string = response_data.get('response', '')
-            result = parse_llm_response(original_string)
+            # get the result
+            result = response_data.get('response', '')
+            # parse the result
+            result = parse_llm_response(result)
   
             return result
         else:
@@ -170,29 +173,44 @@ def send_message():
         extra = message['extra']
     # add message to messages
     messages = read_messages()
-    if len(messages) > 3:
-        messages.pop(0)
     
+    
+    # Send the users message to gemini surrounded by the prompt
     llm_result = chat([{'user': f"{PROMPT} {message['content']} the name of the user is {message['sender']}, address him/her nicely", 'images': []}])
+    # Get the allowed result signifining if a message is to be filtered out or not
     allowed = llm_result.get('allowed', True)
+
+    # Check if allowed is a string and convert it to a boolean
     if isinstance(allowed, str):
         if allowed == allowed.lower() == 'false':
             allowed = False
         else:
             allowed = True
 
+    # Get the response from the model
     response = llm_result.get('response', 'Error: No response')
+
+    # Append the message to the messages list if is not filtered out
     if allowed:
         messages.append({'content': message['content'],
                         'sender': message['sender'],
                         'timestamp': message['timestamp'],
                         'extra': extra,
                         })
+        # Check the maxmium of 15 messages and remove the oldest message if the limit is exceeded
+
+        if len(messages) > 15:
+            messages.pop(0)
     messages.append({'content': response,
                      'sender': 'Server',
                      'timestamp': message['timestamp'],
                      'extra': extra,
                      })
+    
+    # Check the maxmium of 15 messages and remove the oldest message if the limit is exceeded
+    if len(messages) > 15:
+            messages.pop(0)
+    # Save the messages
     save_messages(messages)
     return "OK", 200
 

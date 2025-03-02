@@ -1,52 +1,9 @@
-# Start Code for Task 3
+The Cooking Channel & Antoni's Channel Client, by Antoni Elkenbracht
 
-AI & the Web, winter term 2024/2025
+This github repository includes both elements of task 3 for the course Artificial Intelligence and the Web given at Osnabrueck Univesity.
 
-## Running the code on your development server
+The channel.py file includes the code for a cooking channel that is monitared and assisted by a helpful cooking ai agent which is powered by gemini 1.5 flash text. It includes filtering and a maximum number of messages. The cooking assist will provide the users with recipes, tips and nutritional information.
 
-1. Create and activate a virtual environment, install everything from requirements.txt
+The client.html file includes a client that can view the hub will this channel and all other channels. The client allowes the user to enter their name once and it will be remembered for the rest of the session. The client also provides the user with a search function allowing them to find their favorite channel quickly. In addition to that the channel list does not dissappear when a channel is viewed. The client is able to parse markdown text in any messages enhancing the user experience. 
 
-2. Run hub
-
-    > python hub.py
-
-3. Run the channel server (different shell)
-
-    > python channel.py
-
-4. Register the channel server with the hub (another different shell)
-
-    > flask --app channel.py register
-    
-5. Start the flask client (new shell or shell from 4.) 
-
-    > python client.py
-
-6. Open the client, link is displayed after client start (e.g., http://localhost:5005)
-
-7. Start the React client
-
-There is no complete react client (yet), but you can use the react-client.html file as a starting point. Simply open it in your browser locally.
-
-
-## Creating your own flask channel
-
-1. Set variables in the channel code
-2. Modify the code
-
-
-
-# Deploying on the server
-
-Follow the same steps as for task 2.
-
-Don't forget to adjust the variables in the client code. 
-
-You don't need to run the hub but use the public hub:
-
-http://vm146.rz.uni-osnabrueck.de/hub
-SERVER_AUTHKEY = 'Crr-K24d-2N'
-
-You don't need to start your channel explicitly because the Apache server will do that for you.
-
-But don't forget to register your channel server with the hub (see above).
+Both files are depoloyed to university server, but in thie repository they are set up to be ran locally.
