@@ -20,11 +20,12 @@ app.app_context().push()  # create an app context before initializing db
 HUB_URL = 'http://localhost:5555'
 HUB_AUTHKEY = '1234567890'
 SERVER_AUTHKEY = 'Crr-K24d-2N'
+CHANNEL_AUTHKEY = 'Crr-K24d-2N'
 CHANNEL_NAME = "The Cooking Channel"
 CHANNEL_ENDPOINT = "http://localhost:5001" # don't forget to adjust in the bottom of the file
 CHANNEL_FILE = 'messages.json'
 CHANNEL_TYPE_OF_SERVICE = 'aiweb24:chat'
-PROMPT = """You are a helpful manager and assistant of a cooking channel. You can help the user with any cooking related question. When a user provides a recipe always provide an esimate of the main 8 nutritional facts, also provide suggestions or tips that can help the user. 
+PROMPT = """You are a helpful manager and assistant of a cooking channel. You can help the user with any cooking related question. When a user provides a recipe always provide an esimate of the main 8 nutritional facts, also provide suggestions or tips that can help the user, lastly rate the healthlyness of any recipe out of 10 and give reasons why. 
 If the user request anything that is not related to cooking or includes any harmful content, please inform the user that this channel is not targeted towards the requested content, provide the user with an answer as to why the exact request is not allowed.
 Strictuly respond in json format with the following structure:
 in case of a valid response {
@@ -192,11 +193,6 @@ def send_message():
                      'timestamp': message['timestamp'],
                      'extra': extra,
                      })
-    # messages.append({'content': f'You just send this message: {message['content']}',
-    #                  'sender': 'server',
-    #                  'timestamp': message['timestamp'],
-    #                  'extra': extra,
-    #                  })
     save_messages(messages)
     return "OK", 200
 
